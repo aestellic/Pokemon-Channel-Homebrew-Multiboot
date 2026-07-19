@@ -779,7 +779,7 @@ u8 handle_input_cheats_menu(u16 keys, u8* cursor_y_pos, u8* update) {
     return 0;
 }
 
-u8 handle_input_clock_menu(u16 keys, struct clock_events_t* clock_events, struct saved_time_t* time_change, u8* cursor_y_pos, u8* update) {
+u8 handle_input_clock_menu(u16 keys, struct clock_events_t* clock_events, struct saved_time_t* time_change, u8* base_clock_reset_menu, u8* cursor_y_pos, u8* update) {
     if(keys & KEY_B)
         return EXIT_CLOCK_SETTINGS;
     
@@ -893,7 +893,7 @@ u8 handle_input_clock_menu(u16 keys, struct clock_events_t* clock_events, struct
             break;
         case BOTTOM_Y_CURSOR_CLOCK_SETTINGS_MENU_VALUE:
             if(keys & KEY_A) {
-                if((time_change->d != 0) || (time_change->h != 0) || (time_change->m != 0) || (time_change->s != 0))
+                if((time_change->d != 0) || (time_change->h != 0) || (time_change->m != 0) || (time_change->s != 0) || ((*base_clock_reset_menu) != is_rtc_reset_enabled(clock_events)))
                     return 1;
                 return EXIT_CLOCK_SETTINGS;
             }

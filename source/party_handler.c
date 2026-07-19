@@ -55,10 +55,16 @@
 #define INITIAL_MAIL_GEN3 121
 #define LAST_MAIL_GEN3 132
 
+#define EVS_POSITION_REQUEST_GROWTH 0
+#define EVS_POSITION_REQUEST_ATTACKS 1
+#define EVS_POSITION_REQUEST_EVS 2
+#define EVS_POSITION_REQUEST_MISC 3
+
 #define ACT_AS_GEN1_TRADE (!get_gen1_everstone())
 
 #define PID_POSITIONS 24
 
+size_t get_enc_position(u8, u8);
 u8 _to_valid_level(u8);
 const u8* get_item_name(int, u8);
 u8 get_ability_pokemon(int, u32, u8, u8, u8);
@@ -113,6 +119,11 @@ void init_enc_positions() {
                         for(int l = 0; l < 4; l++)
                             if((l != i) && (l != j) && (l != k))
                                 enc_positions[pos++] = (0<<(i*2)) | (1<<(j*2)) | (2<<(k*2)) | (3<<(l*2));
+}
+
+size_t get_enc_position(u8 index, u8 request_type) {
+    size_t enc_pos_multiplier = (enc_positions[index] >> ((request_type & 3) * 2)) & 3;
+    return (ENC_DATA_SIZE>>2) * enc_pos_multiplier;
 }
 
 u8 get_valid_language(u8 language) {
@@ -962,16 +973,16 @@ u8 sanitize_pokerus_gen3(u8 pokerus_byte) {
 void place_and_encrypt_gen3_data(struct gen3_mon_data_unenc* src, struct gen3_mon* dst) {
     u8 index = get_index_key(dst->pid);
     
-    size_t pos_data = (ENC_DATA_SIZE>>2)*((enc_positions[index] >> 0)&3);
+    size_t pos_data = get_enc_position(index, EVS_POSITION_REQUEST_GROWTH);
     for(size_t i = 0; i < sizeof(struct gen3_mon_growth); i++)
         ((u8*)dst->enc_data)[pos_data+i] = ((u8*)(&src->growth))[i];
-    pos_data = (ENC_DATA_SIZE>>2)*((enc_positions[index] >> 2)&3);
+    pos_data = get_enc_position(index, EVS_POSITION_REQUEST_ATTACKS);
     for(size_t i = 0; i < sizeof(struct gen3_mon_attacks); i++)
         ((u8*)dst->enc_data)[pos_data+i] = ((u8*)(&src->attacks))[i];
-    pos_data = (ENC_DATA_SIZE>>2)*((enc_positions[index] >> 4)&3);
+    pos_data = get_enc_position(index, EVS_POSITION_REQUEST_EVS);
     for(size_t i = 0; i < sizeof(struct gen3_mon_evs); i++)
         ((u8*)dst->enc_data)[pos_data+i] = ((u8*)(&src->evs))[i];
-    pos_data = (ENC_DATA_SIZE>>2)*((enc_positions[index] >> 6)&3);
+    pos_data = get_enc_position(index, EVS_POSITION_REQUEST_MISC);
     for(size_t i = 0; i < sizeof(struct gen3_mon_misc); i++)
         ((u8*)dst->enc_data)[pos_data+i] = ((u8*)(&src->misc))[i];
     
@@ -1073,10 +1084,10 @@ u8 decrypt_to_data_unenc(struct gen3_mon* src, struct gen3_mon_data_unenc* dst) 
 
     u8 index = get_index_key(src->pid);
 
-    struct gen3_mon_growth* tmp_growth = (struct gen3_mon_growth*)&decryption[((ENC_DATA_SIZE>>2)*((enc_positions[index] >> 0)&3))>>2];
-    struct gen3_mon_attacks* tmp_attacks = (struct gen3_mon_attacks*)&decryption[((ENC_DATA_SIZE>>2)*((enc_positions[index] >> 2)&3))>>2];
-    struct gen3_mon_evs* tmp_evs = (struct gen3_mon_evs*)&decryption[((ENC_DATA_SIZE>>2)*((enc_positions[index] >> 4)&3))>>2];
-    struct gen3_mon_misc* tmp_misc = (struct gen3_mon_misc*)&decryption[((ENC_DATA_SIZE>>2)*((enc_positions[index] >> 6)&3))>>2];
+    struct gen3_mon_growth* tmp_growth = (struct gen3_mon_growth*)&decryption[get_enc_position(index, EVS_POSITION_REQUEST_GROWTH)>>2];
+    struct gen3_mon_attacks* tmp_attacks = (struct gen3_mon_attacks*)&decryption[get_enc_position(index, EVS_POSITION_REQUEST_ATTACKS)>>2];
+    struct gen3_mon_evs* tmp_evs = (struct gen3_mon_evs*)&decryption[get_enc_position(index, EVS_POSITION_REQUEST_EVS)>>2];
+    struct gen3_mon_misc* tmp_misc = (struct gen3_mon_misc*)&decryption[get_enc_position(index, EVS_POSITION_REQUEST_MISC)>>2];
 
     for(size_t i = 0; i < sizeof(struct gen3_mon_growth); i++)
         ((u8*)&dst->growth)[i] = ((u8*)tmp_growth)[i];

@@ -25,7 +25,7 @@ By adjusting the settings available in the Main Menu, you can choose which gener
 - Gen 2 is for trading with Pokémon Gold/Silver/Crystal.
 - Gen 3 is for trading with other GBA consoles running this homebrew.
 
-The "Act as" option allows one to choose whether the console will act as the main unit or not. Both options will work fine, but it's suggested not to change this unless you know what you're doing.
+The "Role" option allows one to choose whether the console will act as the main unit or not. Both options will work fine, but it's suggested not to change this unless you know what you're doing.
 
 #### Trading to Gen 1 or Gen 2
 - If you want to trade to the Japanese versions of Gen 1 or Gen 2 games, you must set the Region option in the Main Menu to Jpn.

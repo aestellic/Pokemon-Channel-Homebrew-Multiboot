@@ -91,7 +91,7 @@ void gen12_settings_menu_init(u8*);
 void base_settings_menu_init(struct game_data_t*, u8*);
 void load_warnings_menu_init(struct game_data_t*, struct game_data_priv_t*);
 void colours_settings_menu_init(u8*, u8*);
-void clock_settings_menu_init(struct game_data_priv_t*, struct saved_time_t*, u8*, u8);
+void clock_settings_menu_init(struct game_data_priv_t*, struct saved_time_t*, u8*, u8*, u8);
 void cheats_menu_init(u8*);
 void clock_warning_menu_init(u8*);
 void learnable_moves_message_init(struct game_data_t*, u8);
@@ -641,7 +641,7 @@ void colours_settings_menu_init(u8* cursor_y_pos, u8* cursor_x_pos) {
     prepare_flush();
 }
 
-void clock_settings_menu_init(struct game_data_priv_t* game_data_priv, struct saved_time_t* time_change, u8* cursor_y_pos, u8 reset_time) {
+void clock_settings_menu_init(struct game_data_priv_t* game_data_priv, struct saved_time_t* time_change, u8* base_clock_reset_menu, u8* cursor_y_pos, u8 reset_time) {
     curr_state = CLOCK_SETTINGS_MENU;
     set_screen(BASE_SCREEN);
     disable_all_screens_but_current();
@@ -649,6 +649,7 @@ void clock_settings_menu_init(struct game_data_priv_t* game_data_priv, struct sa
     if(reset_time) {
         wipe_time(time_change);
         init_rtc_time();
+        *base_clock_reset_menu = is_rtc_reset_enabled(&game_data_priv->clock_events);
     }
     print_clock_menu(&game_data_priv->clock_events, time_change, 1);
     enable_screen(BASE_SCREEN);
@@ -801,6 +802,7 @@ int main(void)
     struct game_data_t game_data[2];
     struct game_data_priv_t game_data_priv;
     struct saved_time_t time_change;
+    u8 base_clock_reset_menu = 0;
     
     init_sprites();
     init_oam_palette();
@@ -1234,7 +1236,7 @@ int main(void)
                     else if(returned_val == ENTER_GEN12_MENU)
                         gen12_settings_menu_init(&cursor_y_pos);
                     else if(returned_val == ENTER_CLOCK_MENU)
-                        clock_settings_menu_init(&game_data_priv, &time_change, &cursor_y_pos, 1);
+                        clock_settings_menu_init(&game_data_priv, &time_change, &base_clock_reset_menu, &cursor_y_pos, 1);
                     else if(returned_val == ENTER_CHEATS_MENU)
                         cheats_menu_init(&cursor_y_pos);
                     else if(returned_val == EXIT_BASE_SETTINGS) {
@@ -1296,10 +1298,15 @@ int main(void)
                 }
                 break;
             case CLOCK_SETTINGS_MENU:
-                returned_val = handle_input_clock_menu(keys, &game_data_priv.clock_events, &time_change, &cursor_y_pos, &update);
+                returned_val = handle_input_clock_menu(keys, &game_data_priv.clock_events, &time_change, &base_clock_reset_menu, &cursor_y_pos, &update);
                 if(returned_val) {
-                    if(returned_val == EXIT_CLOCK_SETTINGS)
+                    if(returned_val == EXIT_CLOCK_SETTINGS) {
+				        if(base_clock_reset_menu)
+				            enable_rtc_reset(&game_data_priv.clock_events);
+				        else
+				            disable_rtc_reset(&game_data_priv.clock_events);
                         base_settings_menu_init(&game_data[0], &cursor_y_pos);
+                    }
                     else {
                         if(!is_daily_update_safe(&game_data[0], &game_data_priv.clock_events, &time_change))
                            clock_warning_menu_init(&cursor_x_pos);
@@ -1323,7 +1330,7 @@ int main(void)
                 returned_val = handle_input_clock_warning_menu(keys, &cursor_x_pos);
                 if(returned_val) {
                     if(returned_val == EXIT_CLOCK_WARNING_SETTINGS)
-                        clock_settings_menu_init(&game_data_priv, &time_change, &cursor_y_pos, 0);
+                        clock_settings_menu_init(&game_data_priv, &time_change, &base_clock_reset_menu, &cursor_y_pos, 0);
                     else {
                         run_daily_update(&game_data[0], &game_data_priv.clock_events, &time_change, game_data_priv.game_cleared_flag);
                         saving_print_screen(0);

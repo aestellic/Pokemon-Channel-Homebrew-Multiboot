@@ -43,7 +43,7 @@ static u8 egg_met_location;
 static u8 first_set_egg_met_location;
 static u8 event_info_replacement;
 
-const struct version_t version = { .main_version = 1, .sub_version = 1, .revision_version = 14, .revision_letter = CONSOLE_LETTER};
+const struct version_t version = { .main_version = 1, .sub_version = 1, .revision_version = 15, .revision_letter = CONSOLE_LETTER};
 const u8* egg_valid_met_locations[NUMBER_OF_GAMES+FIRST_VERSION_ID] = {valid_egg_locations_rs_bin, valid_egg_locations_rs_bin, valid_egg_locations_rs_bin, valid_egg_locations_e_bin, valid_egg_locations_frlg_bin, valid_egg_locations_frlg_bin};
 
 void set_default_settings() {

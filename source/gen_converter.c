@@ -347,7 +347,7 @@ u8 get_exp_nature(struct gen3_mon* dst, struct gen3_mon_growth* growth, u8 level
 
 void convert_evs_of_gen3(struct gen3_mon_evs* evs, u16* old_evs) {
     // Convert to Gen1/2 EVs
-    u16 evs_total = 0;
+    u32 evs_total = 0;
     for(int i = 0; i < EVS_TOTAL_GEN3; i++)
         evs_total += evs->evs[i];
     if(evs_total >= MAX_USABLE_EVS)

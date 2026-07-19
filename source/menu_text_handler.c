@@ -113,7 +113,7 @@ const char* unidentified_string = "Unidentified";
 const char* subgame_rs_strings[] = {"R", "S"};
 const char* subgame_frlg_strings[] = {"FR", "LG"};
 const char* game_strings[] = {"???", "Sapphire", "Ruby", "Emerald", "Fire Red", "Leaf Green"};
-const char* actor_strings[] = {"Master", "Slave"};
+const char* actor_strings[] = {"Active", "Passive"}; // Master / Slave
 const char* region_strings[] = {"Int", "Jpn"};
 const char* target_strings[] = {"Gen 1", "Gen 2", "Gen 3"};
 const char* stat_strings[] = {"Hp", "Atk", "Def", "SpA", "SpD", "Spe"};
@@ -1279,7 +1279,7 @@ void print_main_menu(u8 update, u8 curr_gen, u8 is_jp, u8 is_master, struct game
         }
         set_text_y(5);
         set_text_x(MAIN_MENU_DISTANCE_FROM_BORDER);
-        PRINT_FUNCTION("Act as: ");
+        PRINT_FUNCTION("Role: ");
         if(!is_master)
             PRINT_FUNCTION(" \x01>", actor_strings[1]);
         else

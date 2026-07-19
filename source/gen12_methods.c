@@ -109,7 +109,8 @@ u16 get_mon_index_gen1_to_3(u8 index){
 
 u16 get_stat_exp_contribution(u16 stat_exp){
     u16 stat_exp_contribution = Sqrt(stat_exp);
-    if((stat_exp_contribution * stat_exp_contribution) < stat_exp)
+    u32 stat_exp_multiplied = stat_exp_contribution * stat_exp_contribution;
+    if(stat_exp_multiplied < ((u32)stat_exp))
         stat_exp_contribution += 1;
     if(stat_exp_contribution >= 0x100)
         stat_exp_contribution = 0xFF;

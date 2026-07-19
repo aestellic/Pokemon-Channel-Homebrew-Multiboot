@@ -58,7 +58,7 @@ u8 handle_input_trade_setup(u16, u8);
 u8 handle_input_colours_menu(u16, u8*, u8*, u8*);
 u8 handle_input_evolution_menu(u16, u8*, u8*, u16);
 u8 handle_input_cheats_menu(u16, u8*, u8*);
-u8 handle_input_clock_menu(u16, struct clock_events_t*, struct saved_time_t*, u8*, u8*);
+u8 handle_input_clock_menu(u16, struct clock_events_t*, struct saved_time_t*, u8*, u8*, u8*);
 u8 handle_input_clock_warning_menu(u16, u8*);
 u8 handle_input_gen12_settings_menu(u16, u8*, u8*);
 u8 handle_input_print_read_info(u16);
