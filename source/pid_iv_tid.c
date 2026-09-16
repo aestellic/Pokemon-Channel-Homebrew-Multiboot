@@ -434,10 +434,6 @@ void _generate_egg_info(u8 wanted_nature, u16 wanted_ivs, u16 tsv, u8 gender, u8
     }
 }
 
-void generate_egg_info(u8 index, u8 wanted_nature, u16 wanted_ivs, u16 tsv, u8 curr_gen, u32* dst_pid, u32* dst_ivs) {
-    _generate_egg_info(wanted_nature, wanted_ivs, tsv, get_pokemon_gender_gen2(index, (wanted_ivs>>4)&0xF, 0, curr_gen), get_pokemon_gender_kind_gen2(index, 0, curr_gen), dst_pid, dst_ivs, get_rng());
-}
-
 u16 determine_lower_pid_gendered(u16 lower_pid, u8 gender, u8 gender_kind) {
     if(gender_values[gender_kind] != 0) {
         if((gender == M_GENDER) && ((lower_pid & 0xFF) < gender_values[gender_kind]))
@@ -487,10 +483,6 @@ void _generate_egg_shiny_info(u8 wanted_nature, u16 tsv, u8 gender, u8 gender_ki
     
     *dst_ivs = generated_ivs | (((get_next_seed(seed)>>16)&0x7FFF)<<15);
     *dst_pid = pid;
-}
-
-void generate_egg_shiny_info(u8 index, u8 wanted_nature, u16 wanted_ivs, u16 tsv, u8 curr_gen, u32* dst_pid, u32* dst_ivs) {
-    _generate_egg_shiny_info(wanted_nature, tsv, get_pokemon_gender_gen2(index, (wanted_ivs>>4)&0xF, 0, curr_gen), get_pokemon_gender_kind_gen2(index, 0, curr_gen), dst_pid, dst_ivs, get_rng());
 }
 
 void _convert_roamer_to_colo_info(u8 wanted_nature, u16 wanted_ivs, u8 hp_ivs, u8 atk_ivs, u16 tsv, u32* dst_pid, u32* dst_ivs, u8* dst_ability, u32 start_seed) {

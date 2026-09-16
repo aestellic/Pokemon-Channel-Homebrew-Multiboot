@@ -2,7 +2,6 @@
 #include "config_settings.h"
 #include "version_identifier.h"
 #include "party_handler.h"
-#include "gen_converter.h"
 #include "useful_qualifiers.h"
 
 #include "default_colours_bin.h"
@@ -174,10 +173,6 @@ u8 set_applied_ball(u16 new_val) {
         new_val = FIRST_BALL_ID;
     if(new_val < FIRST_BALL_ID)
         new_val = LAST_BALL_ID;
-    if(VALID_POKEBALL_POSSIBLE & (1 << new_val)) {
-        applied_ball = new_val;
-        return 1;
-    }
     return 0;
 }
 

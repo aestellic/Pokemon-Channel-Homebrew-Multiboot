@@ -3,7 +3,6 @@
 #include "gen3_save.h"
 #include "gen3_clock_events.h"
 #include "party_handler.h"
-#include "gen_converter.h"
 #include "text_handler.h"
 #include "timing_basic.h"
 #include <stddef.h>
@@ -210,36 +209,6 @@ void register_dex_entry(struct game_data_priv_t* game_data_priv, struct gen3_mon
     }
 }
 
-void handle_mail_trade(struct game_data_t* game_data, u8 own_mon, u8 other_mon) {
-    u8 mail_id = get_mail_id_raw(&game_data[0].party_3_undec[own_mon]);
-    if((mail_id != GEN3_NO_MAIL) && (mail_id < PARTY_SIZE)) {
-        clean_mail_gen3(&game_data[0].mails_3[get_mail_id_raw(&game_data[0].party_3_undec[own_mon])], game_data[0].party_3_undec[own_mon].src);
-    }
-
-    mail_id = get_mail_id_raw(&game_data[1].party_3_undec[other_mon]);
-    if((mail_id != GEN3_NO_MAIL) && (mail_id < PARTY_SIZE)) {
-        u8 is_mail_free[PARTY_SIZE] = {1,1,1,1,1,1};
-        for(gen3_party_total_t i = 0; i < game_data[0].party_3.total; i++) {
-            u8 inner_mail_id = get_mail_id_raw(&game_data[0].party_3_undec[i]);
-            if((inner_mail_id != GEN3_NO_MAIL) && (inner_mail_id < PARTY_SIZE))
-                is_mail_free[inner_mail_id] = 0;
-        }
-        u8 target = PARTY_SIZE-1;
-        for(gen3_party_total_t i = 0; i < PARTY_SIZE; i++)
-            if(is_mail_free[i]) {
-                target = i;
-                break;
-            }
-        u8* dst = (u8*)&game_data[0].mails_3[target];
-        u8* src = (u8*)&game_data[1].mails_3[mail_id];
-        for(size_t i = 0; i < sizeof(struct mail_gen3); i++)
-            dst[i] = src[i];
-        game_data[1].party_3_undec[other_mon].src->mail_id = target;
-    }
-    else 
-        game_data[1].party_3_undec[other_mon].src->mail_id = GEN3_NO_MAIL;
-}
-
 void update_gift_ribbons(struct game_data_t* game_data, const u8* new_gift_ribbons) {
     for(int i = 0; i < GIFT_RIBBONS; i++)
         if(!game_data->giftRibbons[i])
@@ -274,30 +243,6 @@ void replace_party_entry(struct game_data_t* game_data, struct gen3_mon_data_une
     game_data->party_3_undec[index_dst].src = &game_data->party_3.mons[index_dst];
 }
 
-void trade_reorder_party_entries(struct game_data_t* game_data, struct gen3_mon_data_unenc* new_mon, u8 old_index) {
-    gen3_party_total_t party_size = game_data->party_3.total;
-    if(party_size > PARTY_SIZE)
-        party_size = PARTY_SIZE;
-    if(old_index >= party_size)
-        old_index = party_size-1;
-    for(gen3_party_total_t i = old_index + 1; i < party_size; i++)
-        replace_party_entry(game_data, &game_data->party_3_undec[i], i-1);
-    replace_party_entry(game_data, new_mon, party_size-1);
-}
-
-u8 trade_mons(struct game_data_t* game_data, struct game_data_priv_t* game_data_priv, u8 own_mon, u8 other_mon, u8 curr_gen) {
-    handle_mail_trade(game_data, own_mon, other_mon);
-
-    trade_reorder_party_entries(&game_data[0], &game_data[1].party_3_undec[other_mon], own_mon);
-    own_mon = get_new_party_entry_index(&game_data[0]);
-    update_gift_ribbons(&game_data[0], game_data[1].giftRibbons);
-    register_dex_entry(game_data_priv, &game_data[0].party_3_undec[own_mon]);
-    u8 ret_val = trade_evolve(&game_data[0].party_3.mons[own_mon], &game_data[0].party_3_undec[own_mon], curr_gen);
-    if(ret_val)
-        register_dex_entry(game_data_priv, &game_data[0].party_3_undec[own_mon]);
-    return ret_val;
-}
-
 u8 get_party_usable_num(struct game_data_t* game_data) {
     if(!get_is_cartridge_loaded())
         return 0;
@@ -309,37 +254,6 @@ u8 get_party_usable_num(struct game_data_t* game_data) {
         if((game_data[0].party_3_undec[i].is_valid_gen3) && (!game_data[0].party_3_undec[i].is_egg))
             found_size += 1;
     return found_size;
-}
-
-u8 is_invalid_offer(struct game_data_t* game_data, u8 own_mon, u8 other_mon, u8 curr_gen, u16 received_species) {
-    // Prevent OOB checks
-    if(game_data[1].party_3.total > PARTY_SIZE)
-        game_data[1].party_3.total = PARTY_SIZE;
-    if(other_mon >= game_data[1].party_3.total)
-        return 1 + 0;
-
-    // Check for validity
-    if(!game_data[1].party_3_undec[other_mon].is_valid_gen3)
-        return 1 + 0;
-
-    // For gen 3, check the correct species from the other actor
-    if((curr_gen == 3) && (game_data[1].party_3_undec[other_mon].growth.species != received_species))
-        return 1 + 0;
-
-    u8 found_size = get_party_usable_num(&game_data[0]);
-
-    // Check that the receiving party has at least one active mon
-    if(!found_size)
-        return 1 + 1;
-
-    // Check that the receiving party would have at least one active mon
-    // after the trade
-    u8 target_value = game_data[1].party_3_undec[other_mon].is_egg ? 1 : 0;
-    u8 subtract = game_data[0].party_3_undec[own_mon].is_egg ? 0 : 1;
-    if((found_size-subtract) < target_value)
-        return 1 + 1;
-
-    return 0;
 }
 
 u8 get_sys_flag_save(u8 slot, int section, u8 game_id, u16 flag_num) {
@@ -404,37 +318,12 @@ void process_party_data(struct game_data_t* game_data, struct gen2_party* party_
     if (!found)
         game_data->party_3.total = 0;
     for(gen3_party_total_t i = 0; i < game_data->party_3.total; i++)
-        if(gen3_to_gen2(&party_2->mons[curr_slot], &game_data->party_3_undec[i], game_data->trainer_id)) {
-            curr_slot++;
-            game_data->party_3_undec[i].is_valid_gen2 = 1;
-        }
-        else
-            game_data->party_3_undec[i].is_valid_gen2 = 0;
+        game_data->party_3_undec[i].is_valid_gen2 = 0;
     party_2->total = curr_slot;
     curr_slot = 0;
     for(gen3_party_total_t i = 0; i < game_data->party_3.total; i++)
-        if(gen3_to_gen1(&party_1->mons[curr_slot], &game_data->party_3_undec[i], game_data->trainer_id)) {
-            curr_slot++;
-            game_data->party_3_undec[i].is_valid_gen1 = 1;
-        }
-        else
-            game_data->party_3_undec[i].is_valid_gen1 = 0;
+        game_data->party_3_undec[i].is_valid_gen1 = 0;
     party_1->total = curr_slot;
-}
-
-void alter_party_data_language(struct game_data_t* game_data, struct gen2_party* party_2, struct gen1_party* party_1) {
-    if(game_data->party_3.total > PARTY_SIZE)
-        game_data->party_3.total = PARTY_SIZE;
-    u8 curr_slot_gen2 = 0;
-    u8 curr_slot_gen1 = 0;
-    // Altering the order is strictly prohibited!!!
-    // Saved pointers/indexes would prevent this limitation, but they'd be "extra"
-    for(gen3_party_total_t i = 0; i < game_data->party_3.total; i++) {
-        if(game_data->party_3_undec[i].is_valid_gen3 && game_data->party_3_undec[i].is_valid_gen2 && (curr_slot_gen2 < party_2->total))
-            reconvert_strings_of_gen3_to_gen2(&game_data->party_3_undec[i], &party_2->mons[curr_slot_gen2++]);
-        if(game_data->party_3_undec[i].is_valid_gen3 && game_data->party_3_undec[i].is_valid_gen1 && (curr_slot_gen1 < party_1->total))
-            reconvert_strings_of_gen3_to_gen1(&game_data->party_3_undec[i], &party_1->mons[curr_slot_gen1++]);
-    }
 }
 
 void alter_game_data_language(struct game_data_t* game_data, struct game_data_priv_t* game_data_priv) {
@@ -793,7 +682,7 @@ void load_cartridge(){
 u8 loaded_data_has_warnings(struct game_data_t* game_data, struct game_data_priv_t* game_data_priv) {
     if((!get_is_cartridge_loaded()) || (can_trade(game_data_priv, game_data->game_identifier.game_main_version) == TRADE_IMPOSSIBLE))
         return 0;
-    return (!is_in_pokemon_center(game_data_priv, game_data->game_identifier.game_main_version)) || (can_trade(game_data_priv, game_data->game_identifier.game_main_version) == PARTIAL_TRADE_POSSIBLE) || (get_party_usable_num(game_data) < MIN_ACTIVE_MON_TRADING);
+    return (!is_in_pokemon_center(game_data_priv, game_data->game_identifier.game_main_version));
 }
 
 IWRAM_CODE u8 get_is_cartridge_loaded(){
