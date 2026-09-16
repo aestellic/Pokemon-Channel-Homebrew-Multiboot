@@ -264,11 +264,11 @@ void print_load_warnings(struct game_data_t* game_data, struct game_data_priv_t*
     }
     if(can_trade(game_data_priv, game_data->game_identifier.game_main_version) == PARTIAL_TRADE_POSSIBLE) {
         PRINT_FUNCTION("This game has not acquired\n");
-        PRINT_FUNCTION("a National Pok\xE9dex!\n\n");
+        PRINT_FUNCTION("a National Pokedex!\n\n");
     }
     if(can_trade(game_data_priv, game_data->game_identifier.game_main_version) == TRADE_IMPOSSIBLE) {
         PRINT_FUNCTION("This game has not acquired\n");
-        PRINT_FUNCTION("a Pok\xE9dex!\n\n");
+        PRINT_FUNCTION("a Pokedex!\n\n");
     }
     set_text_y(Y_LIMIT-3);
     PRINT_FUNCTION("  Proceed at your own risk!\n\n");

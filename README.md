@@ -21,6 +21,9 @@ This project would not have been possible without the following projects:
     - [PokeFinder](https://github.com/Admiral-Fish/PokeFinder) - Used in Gen3-to-Gen-X to understand RNG and calculations.
     - [pret](https://github.com/pret) - Used in Gen3-to-Gen-X to understand the innermost workings of the games.
 
+## Bugs
+- Jirachi sometimes isn't registered to the Pokédex
+
 ## License
 All Pokémon names and names of related resources are © Nintendo/Creatures Inc./GAME FREAK Inc.
 
