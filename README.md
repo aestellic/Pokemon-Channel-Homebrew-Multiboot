@@ -10,7 +10,10 @@ The following restrictions have been lifted:
 - Needing to enter the Hall of Fame in Ruby/Sapphire
 - Needing to beat Roxanne four times in Emerald
 - Needing to activate the Black Flute in FireRed/LeafGreen
-- Only being allowed to redeem one Jirachi per save file.
+- Only being allowed to redeem one Jirachi per save file
+
+## RNG Mechanics
+The RNG is seeded based off the time between booting the multiboot and the first button press, down to the microsecond.
 
 ## Credits
 This project would not have been possible without the following projects:
@@ -21,7 +24,7 @@ This project would not have been possible without the following projects:
     - [PokeFinder](https://github.com/Admiral-Fish/PokeFinder) - Used in Gen3-to-Gen-X to understand RNG and calculations.
     - [pret](https://github.com/pret) - Used in Gen3-to-Gen-X to understand the innermost workings of the games.
 
-## Bugs
+## Known Bugs
 - Jirachi sometimes isn't registered to the Pokédex
 
 ## License
