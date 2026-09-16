@@ -6,7 +6,6 @@
 #include "bin_table_handler.h"
 #include "gen3_save.h"
 #include "rng.h"
-#include "pid_iv_tid.h"
 #include "fast_pokemon_methods.h"
 #include "optimized_swi.h"
 #include "useful_qualifiers.h"

@@ -215,7 +215,7 @@ void print_swap_cartridge_menu() {
 
 void print_inject_jirachi_menu() {
     default_reset_screen();
-
+    
     PRINT_FUNCTION("Press A to inject Jirachi.\n\n");
 }
 
@@ -257,6 +257,18 @@ void print_load_warnings(struct game_data_t* game_data, struct game_data_priv_t*
     if(!is_in_pokemon_center(game_data_priv, game_data->game_identifier.game_main_version)){
         PRINT_FUNCTION("The player did not save\n");
         PRINT_FUNCTION("in a Pok\xE9mon Center!\n\n");
+    }
+    if(game_data->party_3.total > (PARTY_SIZE - 1)){
+        PRINT_FUNCTION("Party is full!\n");
+        PRINT_FUNCTION("JIRACHI will replace 6th mon!\n\n");
+    }
+    if(can_trade(game_data_priv, game_data->game_identifier.game_main_version) == PARTIAL_TRADE_POSSIBLE) {
+        PRINT_FUNCTION("This game has not acquired\n");
+        PRINT_FUNCTION("a National Pok\xE9dex!\n\n");
+    }
+    if(can_trade(game_data_priv, game_data->game_identifier.game_main_version) == TRADE_IMPOSSIBLE) {
+        PRINT_FUNCTION("This game has not acquired\n");
+        PRINT_FUNCTION("a Pok\xE9dex!\n\n");
     }
     set_text_y(Y_LIMIT-3);
     PRINT_FUNCTION("  Proceed at your own risk!\n\n");

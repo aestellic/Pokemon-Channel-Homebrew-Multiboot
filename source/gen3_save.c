@@ -230,8 +230,8 @@ void replace_party_entry(struct game_data_t* game_data, struct gen3_mon_data_une
     gen3_party_total_t party_size = game_data->party_3.total;
     if(party_size > PARTY_SIZE)
         party_size = PARTY_SIZE;
-    if(index_dst >= party_size)
-        index_dst = party_size-1;
+    if(index_dst > party_size)
+        index_dst = party_size;
     u8* dst = (u8*)&game_data->party_3.mons[index_dst];
     u8* src = (u8*)src_mon->src;
     for(size_t i = 0; i < sizeof(struct gen3_mon); i++)
@@ -682,7 +682,7 @@ void load_cartridge(){
 u8 loaded_data_has_warnings(struct game_data_t* game_data, struct game_data_priv_t* game_data_priv) {
     if((!get_is_cartridge_loaded()) || (can_trade(game_data_priv, game_data->game_identifier.game_main_version) == TRADE_IMPOSSIBLE))
         return 0;
-    return (!is_in_pokemon_center(game_data_priv, game_data->game_identifier.game_main_version));
+    return (!is_in_pokemon_center(game_data_priv, game_data->game_identifier.game_main_version) || (can_trade(game_data_priv, game_data->game_identifier.game_main_version) == PARTIAL_TRADE_POSSIBLE) || !(game_data->party_3.total > (PARTY_SIZE - 1)));
 }
 
 IWRAM_CODE u8 get_is_cartridge_loaded(){

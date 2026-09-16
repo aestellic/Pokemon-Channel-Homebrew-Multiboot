@@ -13,7 +13,6 @@
 #include "menu_text_handler.h"
 #include "sio_buffers.h"
 #include "rng.h"
-#include "pid_iv_tid.h"
 #include "print_system.h"
 #include "window_handler.h"
 #include "sio.h"
@@ -22,9 +21,12 @@
 #include "optimized_swi.h"
 #include "timing_basic.h"
 #include "config_settings.h"
-//#include "save.h"
+#include "save.h"
 
 #include "ewram_speed_check_bin.h"
+
+#define NUM_KEYS 10
+#define KEY_ALL ((1 << NUM_KEYS) - 1)
 
 #define REG_MEMORY_CONTROLLER_ADDR 0x4000800
 #define HW_SET_REG_MEMORY_CONTROLLER_VALUE 0x0D000020
@@ -41,12 +43,12 @@
 
 #define BASE_SCREEN 0
 
-#define LCRNG_GLIBC(val) (1103515245 * (val) + 24691)   // gba
-#define LCRNG_MSVC(val) (214013 * (val) + 2531011)      // gamecube
+#define LCRNG_MSVC(val) (214013 * (val) + 2531011) // gamecube
 
-__attribute__((section("common_data"))) u32 GLIBC_RngValue = 0;
 __attribute__((section("common_data"))) u32 MSVC_RngValue = 0;
 
+unsigned int wait_keypress(unsigned int);
+unsigned int keys_left = KEY_ALL;
 void vblank_update_function(void);
 void find_optimal_ewram_settings(void);
 void disable_all_irqs(void);
@@ -70,7 +72,6 @@ void complete_save_menu(struct game_data_t*, struct game_data_priv_t*);
 void complete_cartridge_loading(struct game_data_t*, struct game_data_priv_t*, u8*);
 u16 RandomGBA(void);
 u16 RandomGC(void);
-void SeedGBA_Rng(u16);
 void SeedGC_Rng(u16);
 struct gen3_mon_data_unenc* channel_jirachi(u16, struct game_data_t*);
 void inject_jirachi(struct game_data_t*, struct game_data_priv_t*, u8*);
@@ -80,6 +81,33 @@ enum STATE {MAIN_MENU, SWAP_CARTRIDGE_MENU, INJECT_JIRACHI_MENU, WARNINGS_WHEN_L
 enum STATE curr_state;
 u32 counter = 0;
 u32 input_counter = 0;
+
+// source: https://forums.nesdev.org/viewtopic.php?p=277795#p277795
+unsigned int wait_keypress(unsigned int observe_keys) {
+  unsigned int keys, ly;
+  observe_keys &= (1 << NUM_KEYS) - 1;
+
+  // First wait for release
+  irqEnable(IRQ_VBLANK);
+  do {
+    VBlankIntrWait();
+    keys = KEY_ALL & ~REG_KEYINPUT;
+  } while (keys);
+
+  irqEnable(IRQ_KEYPAD);
+  // Then wait for press
+  REG_KEYCNT = observe_keys | KEYIRQ_ENABLE | KEYIRQ_OR;
+  do {
+    IntrWait(1, IRQ_KEYPAD);
+    ly = REG_VCOUNT;
+    keys = KEY_ALL & ~REG_KEYINPUT;
+    if (keys & (keys - 1)) keys = 0;  // allow only one key at once
+    keys &= observe_keys;
+  } while (!keys);
+
+  //irqEnable(IRQ_VBLANK);
+  return keys | (ly << 16);
+}
 
 IWRAM_CODE void vblank_update_function() {
     REG_IF |= IRQ_VBLANK;
@@ -91,7 +119,7 @@ IWRAM_CODE void vblank_update_function() {
 
     move_sprites(counter);
     move_cursor_x(counter);
-    advance_rng();
+    RandomGC();
     counter++;
 }
 
@@ -253,20 +281,10 @@ void complete_cartridge_loading(struct game_data_t* game_data, struct game_data_
         load_warnings_menu_init(game_data, game_data_priv);
 }
 
-u16 RandomGBA(void)
-{
-    GLIBC_RngValue = LCRNG_GLIBC(GLIBC_RngValue);
-    return GLIBC_RngValue >> 16;
-}
 u16 RandomGC(void)
 {
     MSVC_RngValue = LCRNG_MSVC(MSVC_RngValue);
     return MSVC_RngValue >> 16;
-}
-
-void SeedGBA_Rng(u16 seed)
-{
-    GLIBC_RngValue = seed;
 }
 
 void SeedGC_Rng(u16 seed)
@@ -281,6 +299,7 @@ struct gen3_mon_data_unenc* channel_jirachi(u16 seed, struct game_data_t* game_d
     data_dst->src = &dst;
     data_dst->successfully_decrypted = 0;
     data_dst->learnable_moves = NULL;
+    data_dst->is_valid_gen3 = 1;
     SeedGC_Rng(seed);
 
     u8 menu = 0;
@@ -414,10 +433,15 @@ struct gen3_mon_data_unenc* channel_jirachi(u16 seed, struct game_data_t* game_d
 }
 
 void inject_jirachi(struct game_data_t* game_data, struct game_data_priv_t* game_data_priv, u8* cursor_y_pos) {
-    u16 seed = 0;
-    u8 party_slot = get_new_party_entry_index(&game_data[0]); // validate party size < 6 before doing this!!!
+    u16 seed = (MSVC_RngValue >> 16);
+    gen3_party_total_t num_mons = game_data->party_3.total;
+    if(num_mons > PARTY_SIZE)
+        num_mons = PARTY_SIZE;
+    u8 party_slot = num_mons + 1;
     u8 success;
-    replace_party_entry(&game_data[0], channel_jirachi(seed, game_data), party_slot);
+    struct gen3_mon_data_unenc* jirachi = channel_jirachi(seed, game_data);
+    replace_party_entry(&game_data[0], jirachi, party_slot);
+    register_dex_entry(game_data_priv, &game_data[0].party_3_undec[party_slot]);
 
     success = pre_write_gen_3_data(&game_data[0], game_data_priv, 1);
     if(!success)
@@ -454,7 +478,6 @@ int main(void)
     enable_sprites_rendering();
     init_numbers();
     
-    init_unown_tsv();
     #ifdef HAS_SIO
     sio_stop_irq_slave();
     #endif
@@ -471,15 +494,13 @@ int main(void)
     u8 update = 0;
     u8 cursor_y_pos = 0;
     complete_cartridge_loading(&game_data[0], &game_data_priv, &cursor_y_pos);
-    
-    //load_pokemon_sprite_raw(&game_data[1].party_3_undec[0], 1, 0, 0);
-    //worst_case_conversion_tester(&counter);
-    //PRINT_FUNCTION("\n\n0x\x0D: 0x\x0D\n", REG_MEMORY_CONTROLLER_ADDR, 8, REG_MEMORY_CONTROLLER, 8);
+
     scanKeys();
     keys = keysDown();
 
+    SeedGC_Rng(wait_keypress(keys_left));
+
     while(1) {
-        
         do {
             #if defined(__NDS__) && (!defined(__BLOCKSDS__))
             pmMainLoop();
