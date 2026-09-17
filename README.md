@@ -11,6 +11,7 @@ The following restrictions have been lifted:
 - Needing to beat Roxanne four times in Emerald
 - Needing to activate the Black Flute in FireRed/LeafGreen
 - Only being allowed to redeem one Jirachi per save file
+- Compatible with all languages
 
 ## RNG Mechanics
 The RNG is seeded based off the time between booting the multiboot and the first button press, down to the microsecond.
