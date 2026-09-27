@@ -1,3 +1,6 @@
+# This project has been superseded by [this](https://github.com/aestellic/GEN3PokemonDistributionsMB). This repo will remain up as a reference for anyone trying to modify Gen3-to-Gen-X.
+Original README below.
+
 # Pokémon Channel Homebrew Multiboot
 This is a homebrew recreation of the Pokémon Channel multiboot.
 
